@@ -24,6 +24,11 @@ Nous verrons aussi la réalisation d'un environnement de dev, puis l'implémenta
    - [Réalisation d'une factory pour déployer](#factorydeploy)
      - [Déploiement testnet et test avec Remix](#remixtestnetandtest)
 4. [Gestion de la ressource avec IPFS](#ipfs)
+   - [IPFS c'est quoi ?](#whatisipfs)
+   - [Comment ça marche ?](#ipfshowitworks)
+   - [Le rôle d'IPFS avec les NFT](#ipfsfornft)
+   - [Uploader vos metadata sur IPFS](#ipfsuploadurs)
+5. [Finalité du chapitre](#final)
 
 ## Rappel sur les smart contracts <a name="backtosmartcontract"></a>
 
@@ -498,11 +503,79 @@ Vous aurez alors accès à toutes les fonctions de votre contrat pour pouvoir le
 
 ## Gestion de la ressource avec IPFS <a name="ipfs"></a>
 
+### IPFS c'est quoi ? <a name="whatisipfs"></a>
+
+IPFS ou InterPlanetary File System est un protocole P2P (pair à pair) Web3.0.
+Dans le monde du Web 2.0 nous stockons nos fichiers sur des serveurs centralisés, ici l'idée est de reposer sur la décentralisation et un réseau collaboratif afin d'héberger des fichiers.
+
+### Comment ça marche ? <a name="ipfshowitworks"></a>
+
+<p align="center"><img src="../assets/ipfs-example.jpg"></p>
+
+L'objectif avec IPFS est de rendre le réseau :
+
+- plus rapide
+- plus sûr
+- plus ouvert
+- moins coûteux
+
+Dans un idéal de décentralisation il tend à prendre une place considérable façe au protocole HTTP
+
+### Le rôle d'IPFS avec les NFT <a name="ipfsfornft"></a>
+
+Beaucoup de NFTs utilisent la blockchain pour leurs contrats mais n'utilisent aucun système décentralisé pour les ressources.
+
+En effet il est important de mettre en ligne les metadata et tous les assets qui permettront la génération du NFT sur un réseau décentralisé.
+
+L'objectif étant que le propriétaire du NFT soit en possession total de celui-ci sans que le créateur ne puisse détruire ou déplacer l'image par exemple.
+
+### Uploader vos metadata sur IPFS <a name="ipfsuploadurs"></a>
+
+Afin de récupérer l'URL ipfs qui permettra de récupérer les infos de notre NFT dans le contrat.
+
+En partant de ce que nous allons développer [ici](#nftcontractipfs) :
+
+```
       token: Token({
           name: "YouNFTup",
           symbol: "YNP",
           ipfsURI: "https://ipfs.io/ipfs/bafkreihmkaetjsqkb2cnzdkyhvpattzpj7duuqj4kfvtx3qfcitj2didbu"
       }),
+```
+
+> _l'entièreté de cette tâche peut être automatisé par du script_
+
+Nous allons utiliser [nft.storage](https://nft.storage) pour ce faire, il existe aussi [pinata](https://www.pinata.cloud/) :
+
+- Créer un compte ou connectez-vous avec github
+- Uploader votre image afin d'avoir un lien IPFS
+- Rédiger le fichier `metadata.json`
+
+```JSON
+{
+  "description": "Official Younup NFT",
+  "external_url": "https://younup.fr",
+  "image": "ipfs://your-image-link", //example: https://ipfs.io/ipfs/bafkreigf2d4qgt6klvuxwr7d3yvkpjlrszlfhgpbphbdvwkzljivef24iu
+  "name": "YouNFTup",
+  "attributes": [] // You can add many attributes check OpenSea doc
+}
+```
+
+- Uploader le fichier de metadata
+
+Finalement, vous obtiendrez un fichier metada que vous pourrez lier à votre NFT.
+
+Example : https://ipfs.io/ipfs/bafkreihmkaetjsqkb2cnzdkyhvpattzpj7duuqj4kfvtx3qfcitj2didbu
+
+## Finalité du chapitre <a name="final"></a>
+
+Le code : https://github.com/SoxZz5/NFT-tuto/tree/master/project/contracts
+
+Résultat: https://testnets.opensea.io/assets/mumbai/0xe839ceaa7d410c7e957a97d970b8042b13a21c28/0
+
+Minter contract: https://mumbai.polygonscan.com/address/0xc7cdcdfa7c724bd7148efb53a5774928f56dab46
+
+NFT contract: https://mumbai.polygonscan.com/address/0xe839ceaa7d410c7e957a97d970b8042b13a21c28
 
 <!-- LINK -->
 
