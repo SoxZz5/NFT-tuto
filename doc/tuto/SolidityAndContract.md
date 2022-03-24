@@ -1,10 +1,8 @@
 # Solidity, contrat et IPFS
 
-Dans ce chapitre nous allons voir le language Solidity permettant l'écriture de smart contract sur la blockchain [ETH](https://ethereum.org/fr/) et plus largement toutes les blockchains compatible [EVM]
+Dans ce chapitre nous allons voir le langage Solidity permettant l'écriture de smart contract sur la blockchain [ETH](https://ethereum.org/fr/) et plus largement toutes les blockchains compatible [EVM]
 
-Nous verrons aussi la réalisation d'un environnement de dev local, puis l'implémentation de test sur le contrat, la blockchain ne laisse pas le droit à l'erreur il est important d'avoir un fort taux de test bien réalisés.
-
-Puis nous aborderons l'utilisation d'[IPFS](#ipfs) afin de décentraliser les ressources vers lesquelles pointent nos tokens.
+Nous verrons aussi la réalisation d'un environnement de dev, puis l'implémentation d'un contrat avec Remix, puis nous aborderons l'utilisation d'[IPFS](#ipfs) afin de décentraliser les ressources vers lesquelles pointent nos tokens.
 
 ## Table of contents
 
@@ -17,14 +15,22 @@ Puis nous aborderons l'utilisation d'[IPFS](#ipfs) afin de décentraliser les re
      - [Jest/Chai](#jestandchai)
      - [Metamask](#metamask)
 3. [Notre premier smart contract ERC721](#urfirstcontract)
+   - [Contrat du token](#nftcontract)
+     - [Base du contrat et standard ERC721](#nftcontractbase)
+     - [Réalisation du contrat NFT avec IPFS](#nftcontractipfs)
+   - [Chainlink Price Feed pour un prix en temps réel](#pricefeed)
+   - [Réalisation d'un Minter portant des limitations](#minter)
+     - [Liaison du Minter avec Price Feed](#minterpricefeed)
+   - [Réalisation d'une factory pour déployer](#factorydeploy)
+     - [Déploiement testnet et test avec Remix](#remixtestnetandtest)
 4. [Gestion de la ressource avec IPFS](#ipfs)
 
 ## Rappel sur les smart contracts <a name="backtosmartcontract"></a>
 
 </br>
 <img align="right" height="300px" src="../assets/whatisnft.jpg"/>
-<p align="left">Un smart contract est un programme qui contrôle des actifs numériques</p>
-<p align="left">Il fige les règles d'un accord entre plusieurs parties dans la blockchain tout en assurant le transfert d'un actif, à l'instar des contrat légaux traditionnel, lorsque les conditions définies par le contrat se vérifient</p>
+<p align="left">Un smart contract est un programme qui contrôle des actifs numériques, ce contrat intelligent vient convertir un accord entre deux parties en code informatique</p>
+<p align="left">Il fige les règles de cet accord entre plusieurs parties dans la blockchain tout en assurant le transfert d'un actif, à l'instar des contrats légaux traditionnel, lorsque les conditions définies par le contrat se vérifient</p>
 
 </br>
 
@@ -40,7 +46,7 @@ Ce type de contrat peut s'appliquer à de multiples domaines :
 Les smart contract ne permettent pas uniquement d'automatiser les accords, ils les restreignent dans leurs actions.
 Ce genre de contrat tant à se développer dans les domaines nécessitant par exemple d'assurer le respect de la conformité.
 
-On peut "tout" créer avec un smart contract à l'image d'un language comme le C# cependant le coût d'éxécution et lui pris en compte lors de l'utilisation d'une fonction du code.
+On peut "tout" créer avec un smart contract à l'image d'un langage comme le C# cependant le coût d'exécution et lui pris en compte lors de l'utilisation d'une fonction du code.
 
 Il faudra donc optimiser son code au maximum afin de réduire au minimum les frais de transactions lorsque l'utilisateur contactera votre contrat
 
@@ -82,15 +88,17 @@ Ganache, est un outil utilisé pour simuler une blockchain en local afin de rapi
 
 Il est utilisé tout au long du cycle de développement, il permet de développer, déployer et tester votre application dans un environnement sûr et déterministe.
 
+Nous l'utiliserons dans la partie 3 de cette suite d'article afin de déployer notre contrat sur testnet sans Remix.
+
 #### VSCode/Remix <a name="vscodeorremix"></a>
 
-Afin de développer facilement un contrat il est conseiller de d'abord le faire sur [Remix](https://remix-project.org/) puis de l'ajouter au projet final sur [VScode](https://code.visualstudio.com/).
+Afin de développer facilement un contrat il est conseillé de d'abord le faire sur [Remix](https://remix-project.org/) puis de l'ajouter au projet final sur [VScode](https://code.visualstudio.com/).
 
 Pour utiliser VSCode je vous conseille d'installer l'extension portant la syntaxe Solidity dans les fichiers `.sol` -> [Solidity extension](https://marketplace.visualstudio.com/items?itemName=JuanBlanco.solidity).
 
 <img src="../assets/remix.png" align="left" height="150" style="margin-right: 1rem"/>
 
-Remix est un IDE en ligne qui permet de développer, déployer et administer un smart contract pour les blockchains de type Ethereum.
+Remix est un IDE en ligne qui permet de développer, déployer et administrer un smart contract pour les blockchains de type Ethereum.
 
 Remix embarque un compilateur de script Solidity et un réseau de test afin de déployer le contrat.
 
@@ -98,7 +106,7 @@ Remix permet aussi d'avoir accès à une interface exposant les fonctions du con
 
 <br/>
 
-Il peut être utiliser en tant que plateforme d'apprentissage, il suffit pour cela de retrouver le contrat sur la blockchain par exemple:
+Il peut être utiliser en tant que plateforme d'apprentissage, il suffit pour cela de retrouver le contrat que vous voulez comprendre sur la blockchain par exemple:
 
 <p align="center"><img src="https://sothebys-md.brightspotcdn.com/ab/6c/a29219844b9385ea689c9722b7b2/fade2.svg" height="150"></p>
 
@@ -115,17 +123,19 @@ On poura donc comprendre ce qu'il se passe derrière la fonction `tokenURI` qui 
 
 <img src="../assets/truffle.svg" height="200" align="left">
 
-Truffle est un framework de développement pour Ethereum qui à pour mission de rendre le développement blockchain normalement complexe accessible à tous.
+Truffle est un framework de développement pour Ethereum qui a pour mission de rendre le développement blockchain normalement complexe accessible à tous.
 
-Truffle va permettre de créer des migrations afin de déploier nos contrats, mais aussi l'éxécution des tests permettant de certifier la sécurité et la qualité de ceux-ci.
+Truffle va permettre de créer des migrations afin de déployer nos contrats, mais aussi l'exécution des tests permettant de certifier la sécurité et la qualité de ceux-ci.
 
-Dans le monde centralisé lorsque j'éxécute un script JS c'est l'hébérgeur qui répercute le prix, dans le monde décentralisé lorsque j'éxécute une transaction avec un smart contract (donc j'éxécute le script de ce smart contract) je paye les frais en rapport avec le coût de cette fonction.
+Dans le monde centralisé lorsque j'exécute un script JS c'est l'hébergeur qui répercute le prix, dans le monde décentralisé lorsque j'exécute une transaction avec un smart contract (donc j'exécute le script ou une partie du script de ce smart contract) je paye les frais en rapport avec le coût des fonctions qui seront exécutées.
 
 #### Jest/Chai <a name="jestandchai"></a>
 
 [Jest](https://jestjs.io/fr/) est un framework de test JS qui va nous permettre de tester notre contrat ainsi que notre Dapp
 
-[Chai](https://www.chaijs.com/) est une librairie JS qui va nous permettre de réaliser des assertions, c'est à dire, à la suite d'un test de vérifier les valeurs retournées.
+[Chai](https://www.chaijs.com/) est une librairie JS qui va nous permettre de réaliser des assertions, c'est-à-dire, à la suite d'un test de vérifier les valeurs retournées.
+
+Garder les en mémoire, Jest et Chai sont conseillés lors de l'utilisation de Truffle et Ganache pour l'éxécution des tests automatisés, mais aussi du déploiement automatique lors des tests.
 
 #### Metamask <a name="metamask"></a>
 
@@ -139,11 +149,13 @@ Il permet de se connecter au réseau local créer par [Ganache](#ganache) afin d
 
 Afin de réaliser notre premier smart contract et de simplifier la partie développement nous allons utiliser uniquement [Remix](https://remix.ethereum.org) dans cette partie.
 
-### Contrat du token
+### Contrat du token <a name="nftcontract"></a>
 
-Nous allons donc créer le premier NFT de Younup, pour ce faire dans Remix créer un nouveau fichier nommé `YounupNFT.sol`
+Nous allons donc créer le premier NFT de Younup, pour ce faire dans Remix, créer un nouveau fichier nommé `YounupNFT.sol`
 
-On commence par importer les standards portés par OpenZeppelin et les indications utiles au compilateur: 
+#### Base du contrat et standard ERC721 <a name="nftcontractbase"></a>
+
+On commence par importer les standards portés par OpenZeppelin et les indications utiles au compilateur:
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -157,7 +169,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 ```
 
-On va ensuite définir le contrat: 
+#### Réalisation du contrat NFT avec IPFS <a name="nftcontractipfs"></a>
+
+Avant de commencer si vous voulez en apprendre plus sur IPFS et uploader votre première image de façon décentralisée rendez-vous au chapitre [IPFS](#ipfs).
+
+On va ensuite définir le contrat:
 
 ```solidity
 contract YounupNFT is ERC721Enumerable, Ownable {
@@ -192,11 +208,14 @@ contract YounupNFT is ERC721Enumerable, Ownable {
 }
 ```
 
+### Chainlink Price Feed pour un prix en temps réel <a name="pricefeed"></a>
+
 Nous voulons vendre notre NFT à un prix fixe en $, on va alors utiliser le principe de [Price Feed](https://docs.chain.link/docs/get-the-latest-price/) de [Chainlink](https://docs.chain.link/)
 
 Le principe est simple à l'instant donnée où l'on veut mint le NFT le smart contract va faire appelle au Price feed pour nous fournir une conversion de $ en crypto, ici nous utiliserons le token Matic de [Polygon](https://polygon.technology/) pour ses frais minimes.
 
 `YounupNFT-priceFeed.sol`
+
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.12;
@@ -233,6 +252,7 @@ contract YounupNFTPriceFeed {
 }
 
 // We add another contract so we could just deploy this one and don't need to send the token adress in the constructor since it's fixed here
+// Here we pass the data from the MATIC testnet or mainnet because our NFT will be on polygon (MATIC)
 contract PriceFeedMaticUSD is YounupNFTPriceFeed {
     /**
      * Network: Polygon
@@ -245,10 +265,14 @@ contract PriceFeedMaticUSD is YounupNFTPriceFeed {
 }
 ```
 
-Afin d'appliquer des limites de mint à notre NFT, par exemple limité son émission ou encore le nombre de token autorisé par utilisateur nous allons créer ce que l'on appelle un Minter
+### Réalisation d'un Minter portant des limitations <a name="minter"></a>
 
+Afin d'appliquer des limites de mint à notre NFT, par exemple limité son émission ou encore le nombre de token autorisé par utilisateur nous allons créer ce que l'on appelle un Minter.
+C'est ce contrat qui sera le seul à avoir le droit d'appeler la fonction mint de notre contrat NFT via l'utilisation du principe `Ownable`, en effet notre contrat Minter va déployer le contrat du NFT et sera donc Owner.
 Tout d'abord nous allons définir la structure des paramètres d'entrée du contrat.
+
 `YounupNFT-minter.sol`
+
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.12;
@@ -342,6 +366,8 @@ contract YounupNFTMinter {
 }
 ```
 
+#### Liaison du Minter avec Price Feed <a name="minterpricefeed"></a>
+
 Notre contrat est maintenant initialiser mais il reste encore à mettre en place la possibilité de mint au prix voulu :
 
 ```solidity
@@ -385,7 +411,7 @@ Notre contrat est maintenant initialiser mais il reste encore à mettre en place
     if (getState() == State.presalePeriod) {
         ticketPriceUSD = presalePriceUSD;
     }
-    
+
     uint latestPriceAdjusted = uint(latestPrice) * 10 ** (chainTokenDecimals - priceFeed.decimals());
 
     uint entryPrice = 10 ** (chainTokenDecimals * 2) * ticketPriceUSD / latestPriceAdjusted / (10 ** ticketPriceDecimals);
@@ -403,21 +429,26 @@ Il nous faut aussi mettre à jour le token car nous utilisons maintenant un mint
 this équivaut ici à `YounupNFTMinter`
 
 `YounupNFT.sol`
+
 ```solidity
 import "./YounupNFTMinter.sol"
 
 ...
 
 constructor(YouNFTupMinter _minter, ...) {
+  // We keep info about the minter contract address
   minter = _minter;
 }
 ```
 
 La fonction mint étant `public onlyOwner` seul le contrat Minter pourra minter un token YounupNFT
 
-Il ne nous reste plus qu'à déployer notre contrat pour simplifier cette partie je réalise une factory qui crée le constructor plutôt que de le déclarer au déploiement.
+### Réalisation d'une factory pour déployer <a name="factorydeploy"></a>
+
+Il ne nous reste plus qu'à déployer notre contrat pour simplifier cette partie je réalise une factory qui crée le constructeur plutôt que de le déclarer au déploiement sous forme de Tupple.
 
 `YounupNFT-factory.sol`
+
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.12;
@@ -448,35 +479,37 @@ contract YouNFTupFactory is YouNFTupMinter {
 }
 ```
 
-Plus qu'à compiler notre contrat et le déployer sur le réseau de test matic (pour ajouter le réseau c'est [ici](https://docs.polygon.technology/docs/develop/metamask/config-polygon-on-metamask/))
+#### Déploiement testnet et test avec Remix <a name="remixtestnetandtest"></a>
+
+Il ne reste plus qu'à compiler notre contrat et le déployer sur le réseau de test Matic.
+_(pour ajouter le réseau c'est [ici](https://docs.polygon.technology/docs/develop/metamask/config-polygon-on-metamask/))_
 
 Dans la partie "Solidity Compiler" de remix il faut choisir la version du compiler 0.8.12 puis compiler le contrat `YounupNFT-factory.sol` qui importe tous les autres.
 
-Si vous avez bien installer Metamask et que vous avez ajouter le réseau `Matic Mumbai` nous allons maintenant déployer notre contrat.
+Si vous avez bien installé Metamask et que vous avez ajouté le réseau `Matic Mumbai` nous allons maintenant déployer notre contrat.
 
 Dans la partie "Deploy & run transactions" de Remix, il faut choisir pour Environment "Injected Web3", vous aurez alors une notification Metamask pensez à bien vérifier que vous êtes sur le testnet de polygon avant de déployer.
 
-On séléctionne ensuite le contrat `YounupNFT-factory` puis on clique sur "Deploy", une transaction va alors apparaître sur votre Metamask si vous l'acceptez vous aller payer les fee de déploiement d'un contrat (sur testnet donc gratuit)
+On sélectionne ensuite le contrat `YounupNFT-factory` puis on clique sur "Deploy", une transaction va alors apparaître sur votre Metamask si vous l'acceptez vous aller payer les fee de déploiement d'un contrat (sur testnet donc gratuit)
 
-Vous aurez alors accès à toutes les fonctions de votre contrat pour pouvoir le tester
+Vous aurez alors accès à toutes les fonctions de votre contrat pour pouvoir le tester, vous pouvez finalement minter votre premier NFT et vérifier son existence via [OpenSea Testnet](https://testnets.opensea.io/)
 
 <p align="center"><img src="../assets/contract-func.PNG"></p>
 
 ## Gestion de la ressource avec IPFS <a name="ipfs"></a>
 
-</br>
-</br>
-<p align="center">
-<a href="./WhatIsNFT.md">C'est quoi un NFT ?</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-<a href="../../README.md">Retour au sommaire</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="./CreateUrDapp.md">Créer une application décentralisée (DAPP)</a>
-</p>
+      token: Token({
+          name: "YouNFTup",
+          symbol: "YNP",
+          ipfsURI: "https://ipfs.io/ipfs/bafkreihmkaetjsqkb2cnzdkyhvpattzpj7duuqj4kfvtx3qfcitj2didbu"
+      }),
 
 <!-- LINK -->
 
-[solidity]: https://docs.soliditylang.org/en/v0.8.9/ "Solidity"
-[evm]: https://ethereum.org/en/developers/docs/evm/ "EVM"
-[bytecode]: https://fr.wikipedia.org/wiki/Bytecode "Bytecode"
-[ethereum]: https://ethereum.org/en/ "Ethereum"
-[tendermint]: https://tendermint.com/ "Tendermint"
-[tron]: https://tron.network/ "Tron"
-[binance smart chain]: https://academy.binance.com/fr/articles/an-introduction-to-binance-smart-chain-bsc "Binance Smart Chain"
+[solidity]: https://docs.soliditylang.org/en/v0.8.9/ 'Solidity'
+[evm]: https://ethereum.org/en/developers/docs/evm/ 'EVM'
+[bytecode]: https://fr.wikipedia.org/wiki/Bytecode 'Bytecode'
+[ethereum]: https://ethereum.org/en/ 'Ethereum'
+[tendermint]: https://tendermint.com/ 'Tendermint'
+[tron]: https://tron.network/ 'Tron'
+[binance smart chain]: https://academy.binance.com/fr/articles/an-introduction-to-binance-smart-chain-bsc 'Binance Smart Chain'
