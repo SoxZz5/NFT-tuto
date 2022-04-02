@@ -77,7 +77,7 @@ La blockchain peut paraître complexe et demande un environnement de développem
 - [Ganache](#ganache) -> Permet de simuler un noeud ethereum en local
 - [VSCode/Remix](#vscodeorremix) -> Un IDE local et un IDE en ligne
 - [Truffle](#truffle) -> Un environnement de développement, un cadre de test et un pipeline d'actifs (js,css...)
-- [Jest/Chain](#jestandchai) -> Librairie de test et d'assertion pour tester notre contrat ou notre DAPP
+- [Jest/Chai](#jestandchai) -> Librairie de test et d'assertion pour tester notre contrat ou notre DAPP
 - [Metamask](#metamask) -> Un wallet de crypto monnaie permettant le test de notre blockchain local
 
 #### Ganache-CLI <a name="ganache"></a>
